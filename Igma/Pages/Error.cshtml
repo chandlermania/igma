@@ -1,0 +1,33 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white d-flex align-items-center gap-2">
+                <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-warning"></use></svg>
+                <strong>An error occurred</strong>
+            </div>
+            <div class="card-body">
+                @if (Model.ShowRequestId)
+                {
+                    <p class="mb-3">
+                        <span class="text-secondary">Request ID:</span>
+                        <code>@Model.RequestId</code>
+                    </p>
+                }
+                <h6>Development Mode</h6>
+                <p class="text-secondary mb-2">
+                    Swapping to the <strong>Development</strong> environment displays detailed error information.
+                </p>
+                <p class="text-secondary mb-0 small">
+                    <strong>Do not enable Development mode for deployed applications</strong> — it may expose sensitive information.
+                    Set the <code>ASPNETCORE_ENVIRONMENT</code> environment variable to <code>Development</code> and restart to enable local debugging.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

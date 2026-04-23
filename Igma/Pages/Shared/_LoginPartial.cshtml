@@ -1,0 +1,40 @@
+@using System.Security.Principal
+@inject IConfiguration Configuration
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    @if (!string.IsNullOrWhiteSpace(Configuration["AzureAd:ClientId"]))
+    {
+        <div class="nav-item dropdown">
+            <a class="nav-link d-flex align-items-center gap-2 py-0" href="#" role="button"
+               data-coreui-toggle="dropdown" aria-expanded="false">
+                <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-user"></use></svg>
+                <span class="d-none d-sm-inline">@User.Identity.Name</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header text-truncate" style="max-width:220px">@User.Identity.Name</h6></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" asp-page="/SwitchAccount">Switch Account</a>
+                </li>
+                <li>
+                    <a class="dropdown-item" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignOut">Sign Out</a>
+                </li>
+            </ul>
+        </div>
+    }
+    else
+    {
+        <span class="nav-link d-flex align-items-center gap-2 py-0">
+            <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-user"></use></svg>
+            <span class="d-none d-sm-inline">@User.Identity.Name</span>
+        </span>
+    }
+}
+else
+{
+    @if (!string.IsNullOrWhiteSpace(Configuration["AzureAd:ClientId"]))
+    {
+        <a class="nav-link" asp-area="MicrosoftIdentity" asp-controller="Account" asp-action="SignIn">Sign in</a>
+    }
+}

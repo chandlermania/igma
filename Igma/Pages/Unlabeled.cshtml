@@ -1,0 +1,54 @@
+@page
+@model UnlabeledModel
+@{
+    ViewData["Title"] = "Unlabeled IPs";
+}
+
+@if (Model.Unlabeled.Count == 0)
+{
+    <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+        <svg class="icon flex-shrink-0"><use href="/lib/coreui-icons/sprites/free.svg#cil-check-circle"></use></svg>
+        <div>All IP addresses are labeled.</div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center gap-2">
+            <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-warning"></use></svg>
+            <strong>Unlabeled IPs</strong>
+            <span class="badge text-bg-warning ms-auto">@Model.Unlabeled.Count</span>
+        </div>
+        <div class="card-body py-2 text-secondary small border-bottom">
+            IP addresses and CIDRs seen in Azure IP Groups that have not yet been labeled.
+            Visit an <a asp-page="/Index">IP Group</a> to assign labels.
+        </div>
+        <table class="table table-hover table-striped table-sm mb-0" data-sortable>
+            <thead class="table-dark">
+                <tr>
+                    <th>IP / CIDR</th>
+                    <th>IP Group</th>
+                    <th>Resource Group</th>
+                    <th>Subscription</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Unlabeled)
+                {
+                    <tr>
+                        <td class="font-monospace align-middle">@item.IpAddress</td>
+                        <td class="align-middle fw-medium">@item.IpGroupName</td>
+                        <td class="align-middle text-secondary small">@item.ResourceGroup</td>
+                        <td class="align-middle text-secondary small" title="@item.SubscriptionId">@item.SubscriptionName</td>
+                        <td class="text-end align-middle">
+                            <a asp-page="/IpGroup"
+                               asp-route-id="@item.GroupDbId"
+                               class="btn btn-sm btn-primary">View Group</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

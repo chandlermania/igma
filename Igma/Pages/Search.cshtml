@@ -1,0 +1,73 @@
+@page
+@model SearchModel
+@{
+    ViewData["Title"] = "Search";
+}
+
+@if (Model.Query is null)
+{
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5 text-secondary">
+            <svg class="icon icon-3xl mb-3 d-block mx-auto"><use href="/lib/coreui-icons/sprites/free.svg#cil-search"></use></svg>
+            <p class="mb-0">Use the search box in the header to find IPs, CIDRs, labels, or notes across all IP Groups.</p>
+        </div>
+    </div>
+}
+else if (Model.Results.Count == 0)
+{
+    <div class="alert alert-info d-flex align-items-center gap-2" role="alert">
+        <svg class="icon flex-shrink-0"><use href="/lib/coreui-icons/sprites/free.svg#cil-info"></use></svg>
+        <div>No results for <strong>@Model.Query</strong>.</div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center gap-2">
+            <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-search"></use></svg>
+            <strong>Search results for &ldquo;@Model.Query&rdquo;</strong>
+            <span class="badge text-bg-secondary ms-auto">@Model.Results.Count</span>
+        </div>
+        <table class="table table-hover table-striped table-sm mb-0" data-sortable>
+            <thead class="table-dark">
+                <tr>
+                    <th>IP / CIDR</th>
+                    <th>IP Group</th>
+                    <th>Label</th>
+                    <th>Notes</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Model.Results)
+                {
+                    <tr>
+                        <td class="font-monospace align-middle">@entry.IpAddress</td>
+                        <td class="align-middle">
+                            <span class="fw-medium">@entry.IpGroupName</span>
+                            <span class="text-secondary small d-block">@entry.ResourceGroup &middot; @entry.SubscriptionName</span>
+                        </td>
+                        <td class="align-middle">
+                            @if (entry.IsLabeled)
+                            {
+                                <span class="fw-medium">@entry.Label</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-warning">
+                                    <svg class="icon icon-sm me-1"><use href="/lib/coreui-icons/sprites/free.svg#cil-warning"></use></svg>
+                                    Unlabeled
+                                </span>
+                            }
+                        </td>
+                        <td class="align-middle text-secondary small"><span class="notes-cell">@entry.Notes</span></td>
+                        <td class="text-end align-middle">
+                            <a asp-page="/IpGroup" asp-route-id="@entry.GroupDbId"
+                               class="btn btn-sm btn-primary">View Group</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

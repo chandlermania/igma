@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - IGMA</title>
+    <script src="~/js/color-modes.js"></script>
+    <link rel="stylesheet" href="~/lib/coreui/css/coreui.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Igma.styles.css" asp-append-version="true" />
+</head>
+<body>
+@{
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString();
+}
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
+        <div class="sidebar-header border-bottom">
+            <div class="sidebar-brand me-auto">
+                <span class="sidebar-brand-full fw-semibold">IGMA</span>
+                <span class="sidebar-brand-narrow fw-semibold">IGMA</span>
+            </div>
+            <button class="btn-close d-lg-none" type="button" aria-label="Close"
+                    onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"></button>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-title">Navigation</li>
+            <li class="nav-item">
+                <a class="nav-link @(currentPage == "/Index" ? "active" : "")" asp-area="" asp-page="/Index">
+                    <svg class="nav-icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-layers"></use></svg>
+                    IP Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(currentPage == "/Unlabeled" ? "active" : "")" asp-area="" asp-page="/Unlabeled">
+                    <svg class="nav-icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-warning"></use></svg>
+                    Unlabeled
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer border-top d-none d-md-flex">
+            <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
+        </div>
+    </div>
+}
+
+<div class="wrapper d-flex flex-column min-vh-100">
+    <header class="header header-sticky p-0 mb-4">
+        <div class="container-fluid border-bottom px-4 py-2">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <button class="header-toggler d-lg-none" type="button" style="margin-inline-start: -14px;"
+                        onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()">
+                    <svg class="icon icon-lg"><use href="/lib/coreui-icons/sprites/free.svg#cil-menu"></use></svg>
+                </button>
+
+                <form class="d-flex ms-3" method="get" asp-page="/Search" id="navSearchForm">
+                    <div class="input-group">
+                        <input type="search" name="q" id="navSearchInput" class="form-control"
+                               placeholder="Search IPs…" style="width: 200px;"
+                               value="@(ViewData["SearchQuery"])" />
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <svg class="icon icon-sm"><use href="/lib/coreui-icons/sprites/free.svg#cil-search"></use></svg>
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <a class="header-brand ms-2" asp-area="" asp-page="/Index">IGMA</a>
+            }
+            <ul class="header-nav ms-auto">
+                <li class="nav-item py-1">
+                    <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+                </li>
+                <li class="nav-item dropdown">
+                    <button class="btn btn-link nav-link py-2 px-2 d-flex align-items-center"
+                            type="button" aria-expanded="false" data-coreui-toggle="dropdown"
+                            aria-label="Toggle theme">
+                        <svg class="icon icon-lg theme-icon-active">
+                            <use href="/lib/coreui-icons/sprites/free.svg#cil-moon"></use>
+                        </svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="--cui-dropdown-min-width: 8rem;">
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2" type="button" data-coreui-theme-value="light">
+                                <svg class="icon icon-lg"><use href="/lib/coreui-icons/sprites/free.svg#cil-sun"></use></svg>
+                                Light
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2 active" type="button" data-coreui-theme-value="dark">
+                                <svg class="icon icon-lg"><use href="/lib/coreui-icons/sprites/free.svg#cil-moon"></use></svg>
+                                Dark
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2" type="button" data-coreui-theme-value="auto">
+                                <svg class="icon icon-lg"><use href="/lib/coreui-icons/sprites/free.svg#cil-contrast"></use></svg>
+                                Auto
+                            </button>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item py-1">
+                    <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+                </li>
+                <li class="nav-item d-flex align-items-center">
+                    <partial name="_LoginPartial" />
+                </li>
+            </ul>
+        </div>
+        @if (IsSectionDefined("Breadcrumb"))
+        {
+            <div class="container-fluid px-4 py-2">
+                @await RenderSectionAsync("Breadcrumb", required: false)
+            </div>
+        }
+    </header>
+
+    <div class="body flex-grow-1">
+        <div class="container-lg px-4">
+            @RenderBody()
+        </div>
+    </div>
+
+    <footer class="footer d-flex align-items-center">
+        <div class="ms-3">IGMA - IP Group Metadata &amp; Analysis</div>
+        <div class="ms-auto me-3 text-secondary" style="font-size:0.8rem;">
+            v@(typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "unknown")
+        </div>
+    </footer>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/coreui/js/coreui.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

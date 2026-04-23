@@ -1,0 +1,42 @@
+/* Cancel me-auto so justify-content:center on the header can center the narrow brand */
+.sidebar-narrow-unfoldable:not(:hover) .sidebar-brand {
+    margin-inline-end: 0 !important;
+}
+
+/* Apply the sidebar occupy variable as a left margin on the main wrapper */
+.wrapper {
+    --cui-sidebar-occupy-start: 0px;
+    margin-inline-start: var(--cui-sidebar-occupy-start);
+    width: calc(100% - var(--cui-sidebar-occupy-start));
+    transition: margin-inline-start 0.15s, width 0.15s;
+}
+
+th.sortable-col {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+th.sortable-col::after {
+    content: ' \2195';
+    opacity: 0.35;
+    font-size: 0.75em;
+}
+
+th.sort-asc::after {
+    content: ' \25B2';
+    opacity: 1;
+}
+
+th.sort-desc::after {
+    content: ' \25BC';
+    opacity: 1;
+}
+
+.notes-cell {
+    max-width: 320px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}

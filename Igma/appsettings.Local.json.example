@@ -1,0 +1,10 @@
+{
+  "SeedDatabase": true,
+  "Azure": {
+    "SubscriptionIds": []
+  },
+  "AzureAd": {
+    "TenantId": "",
+    "ClientId": ""
+  }
+}

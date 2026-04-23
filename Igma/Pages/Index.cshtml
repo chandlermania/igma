@@ -1,0 +1,70 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "IP Groups";
+}
+
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <svg class="icon flex-shrink-0"><use href="/lib/coreui-icons/sprites/free.svg#cil-warning"></use></svg>
+        <div>@Model.Error</div>
+    </div>
+}
+
+@if (Model.Groups.Count == 0 && Model.Error is null)
+{
+    <div class="alert alert-info d-flex align-items-center gap-2" role="alert">
+        <svg class="icon flex-shrink-0"><use href="/lib/coreui-icons/sprites/free.svg#cil-info"></use></svg>
+        <div>No IP Groups found. Check your <code>Azure:SubscriptionIds</code> configuration.</div>
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex align-items-center gap-2">
+            <svg class="icon"><use href="/lib/coreui-icons/sprites/free.svg#cil-layers"></use></svg>
+            <strong>IP Groups</strong>
+            <span class="badge text-bg-secondary ms-auto">@Model.Groups.Count</span>
+        </div>
+        <table class="table table-hover table-striped mb-0" data-sortable>
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Resource Group</th>
+                    <th>Subscription</th>
+                    <th class="text-end">Total</th>
+                    <th class="text-end">Labeled</th>
+                    <th class="text-end">Unlabeled</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var g in Model.Groups)
+                {
+                    <tr>
+                        <td class="align-middle fw-medium">@g.IpGroupName</td>
+                        <td class="align-middle text-secondary">@g.ResourceGroup</td>
+                        <td class="align-middle text-secondary" title="@g.SubscriptionId">@g.SubscriptionName</td>
+                        <td class="align-middle text-end">@g.TotalCount</td>
+                        <td class="align-middle text-end text-success fw-medium">@g.LabeledCount</td>
+                        <td class="align-middle text-end">
+                            @if (g.UnlabeledCount > 0)
+                            {
+                                <span class="badge text-bg-warning">@g.UnlabeledCount</span>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">0</span>
+                            }
+                        </td>
+                        <td class="align-middle text-end">
+                            <a asp-page="/IpGroup" asp-route-id="@g.GroupDbId"
+                               class="btn btn-sm btn-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
