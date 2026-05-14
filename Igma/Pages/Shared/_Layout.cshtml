@@ -112,16 +112,25 @@
                 </li>
             </ul>
         </div>
-        @if (IsSectionDefined("Breadcrumb"))
-        {
-            <div class="container-fluid px-4 py-2">
-                @await RenderSectionAsync("Breadcrumb", required: false)
-            </div>
-        }
     </header>
 
     <div class="body flex-grow-1">
         <div class="container-lg px-4">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <div class="mb-4">
+                    <div class="fs-2 fw-semibold">@ViewData["Title"]</div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            @if (currentPage != "/Index")
+                            {
+                                <li class="breadcrumb-item"><a asp-page="/Index">IP Groups</a></li>
+                            }
+                            <li class="breadcrumb-item active">@ViewData["Title"]</li>
+                        </ol>
+                    </nav>
+                </div>
+            }
             @RenderBody()
         </div>
     </div>
