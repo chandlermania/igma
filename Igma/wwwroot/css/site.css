@@ -1,14 +1,49 @@
+body {
+    background-color: var(--cui-tertiary-bg);
+}
+
+[data-coreui-theme="dark"] body {
+    background-color: var(--cui-dark-bg-subtle);
+}
+
+.wrapper {
+    width: 100%;
+    padding-inline: var(--cui-sidebar-occupy-start, 0) var(--cui-sidebar-occupy-end, 0);
+    will-change: auto;
+    transition: padding 0.15s;
+}
+
+.header > .container-fluid,
+.sidebar-header {
+    min-height: calc(4rem + 1px);
+}
+
+.sidebar-toggler {
+    margin-inline-start: auto;
+}
+
+.sidebar-narrow,
+.sidebar-narrow-unfoldable:not(:hover) {
+    .sidebar-toggler {
+        margin-inline-end: auto;
+    }
+}
+
 /* Cancel me-auto so justify-content:center on the header can center the narrow brand */
 .sidebar-narrow-unfoldable:not(:hover) .sidebar-brand {
     margin-inline-end: 0 !important;
 }
 
-/* Apply the sidebar occupy variable as a left margin on the main wrapper */
-.wrapper {
-    --cui-sidebar-occupy-start: 0px;
-    margin-inline-start: var(--cui-sidebar-occupy-start);
-    width: calc(100% - var(--cui-sidebar-occupy-start));
-    transition: margin-inline-start 0.15s, width 0.15s;
+.sidebar-narrow-unfoldable:not(:hover) .sidebar-toggler {
+    display: none !important;
+}
+
+.footer {
+    min-height: calc(3rem + 1px);
+}
+
+[data-coreui-theme="dark"] .footer {
+    --cui-footer-bg: var(--cui-body-bg);
 }
 
 th.sortable-col {
