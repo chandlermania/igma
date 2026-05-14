@@ -424,7 +424,6 @@ igma.db-wal
 
 # Local developer overrides (never deploy)
 appsettings.Local.json
-CLAUDE.md
 
 # macOS
 .DS_Store
