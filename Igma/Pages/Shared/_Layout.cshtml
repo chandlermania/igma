@@ -18,10 +18,11 @@
 {
     <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
         <div class="sidebar-header border-bottom">
-            <div class="sidebar-brand me-auto">
+            <div class="sidebar-brand">
                 <span class="sidebar-brand-full fw-semibold">IGMA</span>
                 <span class="sidebar-brand-narrow fw-semibold">IGMA</span>
             </div>
+            <button class="sidebar-toggler d-none d-lg-flex" type="button" data-coreui-toggle="unfoldable"></button>
             <button class="btn-close d-lg-none" type="button" aria-label="Close"
                     onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"></button>
         </div>
@@ -40,9 +41,6 @@
                 </a>
             </li>
         </ul>
-        <div class="sidebar-footer border-top d-none d-md-flex">
-            <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
-        </div>
     </div>
 }
 

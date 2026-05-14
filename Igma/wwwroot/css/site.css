@@ -34,6 +34,10 @@ body {
     margin-inline-end: 0 !important;
 }
 
+.sidebar-narrow-unfoldable:not(:hover) .sidebar-toggler {
+    display: none !important;
+}
+
 .footer {
     min-height: calc(3rem + 1px);
 }
