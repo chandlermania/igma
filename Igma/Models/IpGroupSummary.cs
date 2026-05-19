@@ -8,7 +8,8 @@ public record IpGroupSummary(
     string SubscriptionId,
     string SubscriptionName,
     int TotalCount,
-    int LabeledCount
+    int LabeledCount,
+    string? Description = null
 )
 {
     public int UnlabeledCount => TotalCount - LabeledCount;

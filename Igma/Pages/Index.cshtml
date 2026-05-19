@@ -43,7 +43,13 @@ else
                 @foreach (var g in Model.Groups)
                 {
                     <tr>
-                        <td class="align-middle fw-medium">@g.IpGroupName</td>
+                        <td class="align-middle">
+                            <span class="fw-medium">@g.IpGroupName</span>
+                            @if (!string.IsNullOrWhiteSpace(g.Description))
+                            {
+                                <div class="text-body-secondary small">@g.Description</div>
+                            }
+                        </td>
                         <td class="align-middle text-secondary">@g.ResourceGroup</td>
                         <td class="align-middle text-secondary" title="@g.SubscriptionId">@g.SubscriptionName</td>
                         <td class="align-middle text-end">@g.TotalCount</td>
