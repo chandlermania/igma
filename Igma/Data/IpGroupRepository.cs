@@ -75,14 +75,40 @@ public class IpGroupRepository(IDbConnectionFactory db, ILogger<IpGroupRepositor
     {
         using var conn = db.CreateConnection();
         return conn.Query<IpGroupDbSummary>("""
-            SELECT g.Id, g.AzureId, g.SubscriptionName,
+            SELECT g.Id, g.AzureId, g.SubscriptionName, g.Description,
                    COUNT(l.Id) AS TotalCount,
                    SUM(CASE WHEN l.Label IS NOT NULL AND l.Label != '' THEN 1 ELSE 0 END) AS LabeledCount
             FROM IpGroups g
             LEFT JOIN IpLabels l ON l.IpGroupId = g.AzureId
-            GROUP BY g.Id, g.AzureId, g.SubscriptionName
+            GROUP BY g.Id, g.AzureId, g.SubscriptionName, g.Description
             """).ToList();
+    }
+
+    public IReadOnlyDictionary<string, string?> GetDescriptionMap()
+    {
+        using var conn = db.CreateConnection();
+        return conn.Query("SELECT AzureId, Description FROM IpGroups")
+            .ToDictionary(
+                r => (string)r.AzureId,
+                r => (string?)r.Description,
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    public string? GetDescription(int id)
+    {
+        using var conn = db.CreateConnection();
+        return conn.QuerySingleOrDefault<string?>(
+            "SELECT Description FROM IpGroups WHERE Id = @Id",
+            new { Id = id });
+    }
+
+    public void UpdateDescription(int id, string? description)
+    {
+        using var conn = db.CreateConnection();
+        conn.Execute(
+            "UPDATE IpGroups SET Description = @Description WHERE Id = @Id",
+            new { Id = id, Description = description });
     }
 }
 
-public record IpGroupDbSummary(long Id, string AzureId, string SubscriptionName, long TotalCount, long LabeledCount);
+public record IpGroupDbSummary(long Id, string AzureId, string SubscriptionName, string? Description, long TotalCount, long LabeledCount);

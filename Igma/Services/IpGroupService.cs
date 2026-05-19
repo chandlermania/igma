@@ -35,7 +35,8 @@ public class IpGroupService(
             if (subscriptionIds.Count == 0)
                 return BuildSummariesFromDb();
 
-            var tasks = subscriptionIds.Select(subId => GetSummariesForSubscriptionAsync(client, subId, cts.Token));
+            var descriptionMap = ipGroups.GetDescriptionMap();
+            var tasks = subscriptionIds.Select(subId => GetSummariesForSubscriptionAsync(client, subId, descriptionMap, cts.Token));
             var results = await Task.WhenAll(tasks);
             var summaries = results.SelectMany(x => x).ToList();
 
@@ -61,7 +62,8 @@ public class IpGroupService(
                     SubscriptionId: id.SubscriptionId ?? string.Empty,
                     SubscriptionName: s.SubscriptionName,
                     TotalCount: (int)s.TotalCount,
-                    LabeledCount: (int)s.LabeledCount
+                    LabeledCount: (int)s.LabeledCount,
+                    Description: s.Description
                 );
             }).ToList();
 
@@ -186,7 +188,10 @@ public class IpGroupService(
         return ids;
     }
 
-    private async Task<IEnumerable<IpGroupSummary>> GetSummariesForSubscriptionAsync(ArmClient client, string subscriptionId, CancellationToken ct)
+    private async Task<IEnumerable<IpGroupSummary>> GetSummariesForSubscriptionAsync(
+        ArmClient client, string subscriptionId,
+        IReadOnlyDictionary<string, string?> descriptionMap,
+        CancellationToken ct)
     {
         var subscriptionResource = client.GetSubscriptionResource(
             new ResourceIdentifier($"/subscriptions/{subscriptionId}"));
@@ -205,6 +210,8 @@ public class IpGroupService(
             var labeledCount = labels.GetByIpGroup(azureId)
                 .Count(l => !string.IsNullOrWhiteSpace(l.Label));
 
+            descriptionMap.TryGetValue(azureId, out var description);
+
             summaries.Add(new IpGroupSummary(
                 IpGroupId: azureId,
                 GroupDbId: groupDbId,
@@ -213,7 +220,8 @@ public class IpGroupService(
                 SubscriptionId: subscriptionId,
                 SubscriptionName: subscriptionName,
                 TotalCount: ipAddresses.Count,
-                LabeledCount: labeledCount
+                LabeledCount: labeledCount,
+                Description: description
             ));
         }
 

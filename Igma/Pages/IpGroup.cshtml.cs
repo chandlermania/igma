@@ -21,6 +21,7 @@ public class IpGroupModel(
     public string? ResourceGroup { get; private set; }
     public string? SubscriptionId { get; private set; }
     public string? SubscriptionName { get; private set; }
+    public string? GroupDescription { get; private set; }
     public string? Error { get; private set; }
     public string? SuccessMessage { get; private set; }
     public int TotalCount { get; private set; }
@@ -35,7 +36,32 @@ public class IpGroupModel(
         GroupDbId = id;
         var azureId = ipGroupRepo.GetAzureId(id);
         if (azureId is null) return NotFound();
+        GroupDescription = ipGroupRepo.GetDescription(id);
         return await LoadAsync(azureId, page);
+    }
+
+    public IActionResult OnPostSaveDescriptionJson(int id, string? description)
+    {
+        if (ipGroupRepo.GetAzureId(id) is null) return NotFound();
+
+        description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+        if (description?.Length > 500)
+            return new JsonResult(new { success = false, error = "Description must be 500 characters or fewer." });
+
+        try
+        {
+            ipGroupRepo.UpdateDescription(id, description);
+            ipGroupService.InvalidateSummaryCache();
+            return new JsonResult(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            var error = config.GetValue<bool>("App:ShowDetailedErrors")
+                ? $"Failed to save description: {ex.Message}"
+                : "Failed to save description. Please try again.";
+            return new JsonResult(new { success = false, error }) { StatusCode = 500 };
+        }
     }
 
     public IActionResult OnPostSaveLabelJson(int id, string ipAddress, string? label, string? notes)

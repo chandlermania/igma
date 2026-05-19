@@ -39,6 +39,8 @@ public static class DbInitializer
         var ipGroupCols = conn.Query<string>("SELECT name FROM pragma_table_info('IpGroups')").ToHashSet();
         if (!ipGroupCols.Contains("SubscriptionName"))
             conn.Execute("ALTER TABLE IpGroups ADD COLUMN SubscriptionName TEXT NOT NULL DEFAULT ''");
+        if (!ipGroupCols.Contains("Description"))
+            conn.Execute("ALTER TABLE IpGroups ADD COLUMN Description TEXT");
 
         var ipLabelCols = conn.Query<string>("SELECT name FROM pragma_table_info('IpLabels')").ToHashSet();
         if (!ipLabelCols.Contains("UpdatedBy"))
