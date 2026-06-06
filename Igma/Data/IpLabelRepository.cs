@@ -5,11 +5,18 @@ namespace Igma.Data;
 
 public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepository> logger)
 {
+    private const string JoinSelect = """
+        SELECT m.IpGroupId, m.IpAddress, m.CreatedAt,
+               a.Label, a.Notes, a.UpdatedBy, a.UpdatedAt
+        FROM IpAddresses m
+        LEFT JOIN IpAddressLabels a ON a.IpAddress = m.IpAddress
+        """;
+
     public IReadOnlyList<IpLabel> GetByIpGroup(string ipGroupId)
     {
         using var conn = db.CreateConnection();
         return conn.Query<IpLabel>(
-            "SELECT * FROM IpLabels WHERE IpGroupId = @IpGroupId ORDER BY IpAddress",
+            $"{JoinSelect} WHERE m.IpGroupId = @IpGroupId ORDER BY m.IpAddress",
             new { IpGroupId = ipGroupId }).ToList();
     }
 
@@ -17,11 +24,10 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
     {
         using var conn = db.CreateConnection();
         return conn.QuerySingleOrDefault<IpLabel>(
-            "SELECT * FROM IpLabels WHERE IpGroupId = @IpGroupId AND IpAddress = @IpAddress",
+            $"{JoinSelect} WHERE m.IpGroupId = @IpGroupId AND m.IpAddress = @IpAddress",
             new { IpGroupId = ipGroupId, IpAddress = ipAddress });
     }
 
-    // Labels are per-IP, not per-group. Saving a label propagates it to every group containing the same IP/CIDR.
     public void Upsert(string ipGroupId, string ipAddress, string? label, string? notes, string? updatedBy = null)
     {
         try
@@ -29,17 +35,18 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
             using var conn = db.CreateConnection();
             using var tx = conn.BeginTransaction();
 
-            // Ensure a row exists for this specific group (may not exist yet if sync hasn't run)
+            // Ensure membership row exists
             conn.Execute("""
-                INSERT OR IGNORE INTO IpLabels (IpGroupId, IpAddress, CreatedAt, UpdatedAt)
-                VALUES (@IpGroupId, @IpAddress, datetime('now'), datetime('now'));
+                INSERT OR IGNORE INTO IpAddresses (IpGroupId, IpAddress, CreatedAt)
+                VALUES (@IpGroupId, @IpAddress, datetime('now'));
                 """, new { IpGroupId = ipGroupId, IpAddress = ipAddress }, tx);
 
-            // Apply the label across ALL groups that contain this IP/CIDR
+            // Upsert the label globally — one row per IP, shared across all groups
             conn.Execute("""
-                UPDATE IpLabels
-                SET Label = @Label, Notes = @Notes, UpdatedBy = @UpdatedBy, UpdatedAt = datetime('now')
-                WHERE IpAddress = @IpAddress;
+                INSERT INTO IpAddressLabels (IpAddress, Label, Notes, UpdatedBy, CreatedAt, UpdatedAt)
+                VALUES (@IpAddress, @Label, @Notes, @UpdatedBy, datetime('now'), datetime('now'))
+                ON CONFLICT(IpAddress) DO UPDATE SET
+                    Label = @Label, Notes = @Notes, UpdatedBy = @UpdatedBy, UpdatedAt = datetime('now');
                 """, new { IpAddress = ipAddress, Label = label, Notes = notes, UpdatedBy = updatedBy }, tx);
 
             tx.Commit();
@@ -51,27 +58,23 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
         }
     }
 
-    public void Delete(string ipGroupId, string ipAddress)
+    public int CountLabeled(string ipGroupId)
     {
-        try
-        {
-            using var conn = db.CreateConnection();
-            conn.Execute(
-                "DELETE FROM IpLabels WHERE IpGroupId = @IpGroupId AND IpAddress = @IpAddress",
-                new { IpGroupId = ipGroupId, IpAddress = ipAddress });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to delete label for {IpGroupId}/{IpAddress}", ipGroupId, ipAddress);
-            throw;
-        }
+        using var conn = db.CreateConnection();
+        return conn.ExecuteScalar<int>("""
+            SELECT COUNT(*)
+            FROM IpAddresses m
+            JOIN IpAddressLabels a ON a.IpAddress = m.IpAddress
+            WHERE m.IpGroupId = @IpGroupId
+              AND a.Label IS NOT NULL AND a.Label != ''
+            """, new { IpGroupId = ipGroupId });
     }
 
     public IReadOnlyList<IpLabel> GetAllUnlabeled()
     {
         using var conn = db.CreateConnection();
         return conn.Query<IpLabel>(
-            "SELECT * FROM IpLabels WHERE Label IS NULL OR Label = '' ORDER BY IpGroupId, IpAddress").ToList();
+            $"{JoinSelect} WHERE a.Label IS NULL OR a.Label = '' ORDER BY m.IpGroupId, m.IpAddress").ToList();
     }
 
     public IReadOnlyList<IpLabel> Search(string query)
@@ -79,17 +82,16 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
         using var conn = db.CreateConnection();
         var escaped = query.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
         return conn.Query<IpLabel>(
-            """
-            SELECT * FROM IpLabels
-            WHERE IpAddress LIKE @Pattern ESCAPE '\'
-               OR Label LIKE @Pattern ESCAPE '\'
-               OR Notes LIKE @Pattern ESCAPE '\'
-            ORDER BY IpGroupId, IpAddress
+            $"""
+            {JoinSelect}
+            WHERE m.IpAddress LIKE @Pattern ESCAPE '\'
+               OR a.Label     LIKE @Pattern ESCAPE '\'
+               OR a.Notes     LIKE @Pattern ESCAPE '\'
+            ORDER BY m.IpGroupId, m.IpAddress
             """,
             new { Pattern = $"%{escaped}%" }).ToList();
     }
 
-    // Atomically removes IPs no longer in Azure and inserts any new ones, within a single transaction.
     public void SyncIps(string ipGroupId, IList<string> currentIps)
     {
         try
@@ -99,20 +101,20 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
 
             if (currentIps.Count == 0)
             {
-                conn.Execute("DELETE FROM IpLabels WHERE IpGroupId = @IpGroupId",
+                conn.Execute("DELETE FROM IpAddresses WHERE IpGroupId = @IpGroupId",
                     new { IpGroupId = ipGroupId }, tx);
             }
             else
             {
                 conn.Execute(
-                    "DELETE FROM IpLabels WHERE IpGroupId = @IpGroupId AND IpAddress NOT IN @Ips",
+                    "DELETE FROM IpAddresses WHERE IpGroupId = @IpGroupId AND IpAddress NOT IN @Ips",
                     new { IpGroupId = ipGroupId, Ips = currentIps }, tx);
             }
 
             foreach (var ip in currentIps)
                 conn.Execute("""
-                    INSERT OR IGNORE INTO IpLabels (IpGroupId, IpAddress, CreatedAt, UpdatedAt)
-                    VALUES (@IpGroupId, @IpAddress, datetime('now'), datetime('now'));
+                    INSERT OR IGNORE INTO IpAddresses (IpGroupId, IpAddress, CreatedAt)
+                    VALUES (@IpGroupId, @IpAddress, datetime('now'));
                     """, new { IpGroupId = ipGroupId, IpAddress = ip }, tx);
 
             tx.Commit();
@@ -124,28 +126,4 @@ public class IpLabelRepository(IDbConnectionFactory db, ILogger<IpLabelRepositor
         }
     }
 
-    public void InsertIfNotExists(string ipGroupId, string ipAddress)
-    {
-        using var conn = db.CreateConnection();
-        conn.Execute("""
-            INSERT OR IGNORE INTO IpLabels (IpGroupId, IpAddress, CreatedAt, UpdatedAt)
-            VALUES (@IpGroupId, @IpAddress, datetime('now'), datetime('now'));
-            """,
-            new { IpGroupId = ipGroupId, IpAddress = ipAddress });
-    }
-
-    public void DeleteStale(string ipGroupId, IEnumerable<string> currentIpAddresses)
-    {
-        var current = currentIpAddresses.ToList();
-        using var conn = db.CreateConnection();
-        if (current.Count == 0)
-        {
-            conn.Execute("DELETE FROM IpLabels WHERE IpGroupId = @IpGroupId",
-                new { IpGroupId = ipGroupId });
-            return;
-        }
-        conn.Execute(
-            "DELETE FROM IpLabels WHERE IpGroupId = @IpGroupId AND IpAddress NOT IN @Ips",
-            new { IpGroupId = ipGroupId, Ips = current });
-    }
 }

@@ -207,8 +207,7 @@ public class IpGroupService(
             var groupDbId = ipGroups.GetOrCreate(azureId, subscriptionName);
             labels.SyncIps(azureId, ipAddresses);
 
-            var labeledCount = labels.GetByIpGroup(azureId)
-                .Count(l => !string.IsNullOrWhiteSpace(l.Label));
+            var labeledCount = labels.CountLabeled(azureId);
 
             descriptionMap.TryGetValue(azureId, out var description);
 
