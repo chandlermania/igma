@@ -59,7 +59,7 @@ public class IpGroupRepository(IDbConnectionFactory db, ILogger<IpGroupRepositor
             foreach (var azureId in orphaned)
             {
                 logger.LogInformation("Removing orphaned IP Group {AzureId}", azureId);
-                conn.Execute("DELETE FROM IpLabels WHERE IpGroupId = @AzureId", new { AzureId = azureId }, tx);
+                conn.Execute("DELETE FROM IpAddresses WHERE IpGroupId = @AzureId", new { AzureId = azureId }, tx);
                 conn.Execute("DELETE FROM IpGroups WHERE AzureId = @AzureId", new { AzureId = azureId }, tx);
             }
             tx.Commit();
@@ -76,10 +76,11 @@ public class IpGroupRepository(IDbConnectionFactory db, ILogger<IpGroupRepositor
         using var conn = db.CreateConnection();
         return conn.Query<IpGroupDbSummary>("""
             SELECT g.Id, g.AzureId, g.SubscriptionName, g.Description,
-                   COUNT(l.Id) AS TotalCount,
-                   SUM(CASE WHEN l.Label IS NOT NULL AND l.Label != '' THEN 1 ELSE 0 END) AS LabeledCount
+                   COUNT(m.IpAddress) AS TotalCount,
+                   SUM(CASE WHEN a.Label IS NOT NULL AND a.Label != '' THEN 1 ELSE 0 END) AS LabeledCount
             FROM IpGroups g
-            LEFT JOIN IpLabels l ON l.IpGroupId = g.AzureId
+            LEFT JOIN IpAddresses m ON m.IpGroupId = g.AzureId
+            LEFT JOIN IpAddressLabels a ON a.IpAddress = m.IpAddress
             GROUP BY g.Id, g.AzureId, g.SubscriptionName, g.Description
             """).ToList();
     }

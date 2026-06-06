@@ -14,7 +14,7 @@ public static class DbSeeder
         [
             new("10.0.0.1",        "Corp VPN Gateway – Primary",   "Main ingress for employee VPN"),
             new("10.0.0.2",        "Corp VPN Gateway – Secondary", "Failover node"),
-            new("10.0.1.0/24",     "Corp VPN Client Pool"),
+            new("10.0.1.0/24",     "Corp VPN Client Pool",         "Branch and remote client address pool"),
             new("192.168.10.0/23"),
             new("172.16.5.100"),
         ], Description: "Employee VPN gateway and client address pool. Referenced by firewall rules across dev and prod subscriptions."),
@@ -25,7 +25,7 @@ public static class DbSeeder
             new("203.0.113.20"),
             new("198.51.100.0/28", "Chicago Office NAT"),
             new("198.51.100.16/28"),
-            new("10.0.1.0/24",     "Corp VPN Client Pool", "Shared — branch traffic tunnels through VPN pool"),
+            new("10.0.1.0/24",     "Corp VPN Client Pool", "Branch and remote client address pool"),
         ], Description: "Public NAT IPs for UK and US branch offices. Used in inbound allow rules for corporate apps."),
         new("/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-dmz/providers/Microsoft.Network/ipGroups/ipg-external-partners",
             "ipg-external-partners", "rg-dmz", "Corp-Dev",
@@ -33,7 +33,7 @@ public static class DbSeeder
             new("198.18.0.5"),
             new("198.18.0.6"),
             new("198.18.1.0/24"),
-            new("10.0.0.1",        "Corp VPN Gateway – Primary", "Shared — partners route through corp VPN gateway"),
+            new("10.0.0.1",        "Corp VPN Gateway – Primary", "Main ingress for employee VPN"),
         ]),
         new("/subscriptions/00000000-0000-0000-0000-000000000002/resourceGroups/rg-prod/providers/Microsoft.Network/ipGroups/ipg-prod-services",
             "ipg-prod-services", "rg-prod", "Corp-Prod",
@@ -45,8 +45,8 @@ public static class DbSeeder
         new("/subscriptions/00000000-0000-0000-0000-000000000002/resourceGroups/rg-prod/providers/Microsoft.Network/ipGroups/ipg-corp-vpn",
             "ipg-corp-vpn", "rg-prod", "Corp-Prod",
         [
-            new("10.0.0.1",        "Corp VPN Gateway – Primary", "Shared — prod firewall rules reference same gateway"),
-            new("10.0.1.0/24",     "Corp VPN Client Pool"),
+            new("10.0.0.1",        "Corp VPN Gateway – Primary", "Main ingress for employee VPN"),
+            new("10.0.1.0/24",     "Corp VPN Client Pool",       "Branch and remote client address pool"),
             new("10.200.0.0/24"),
         ], Description: "VPN ranges as referenced by prod firewall policy. Mirrors dev group — changes must be coordinated."),
     ];
@@ -68,10 +68,17 @@ public static class DbSeeder
             foreach (var ip in group.IPs)
             {
                 conn.Execute("""
-                    INSERT INTO IpLabels (IpGroupId, IpAddress, Label, Notes, CreatedAt, UpdatedAt)
-                    VALUES (@IpGroupId, @IpAddress, @Label, @Notes, datetime('now'), datetime('now'));
+                    INSERT OR IGNORE INTO IpAddresses (IpGroupId, IpAddress, CreatedAt)
+                    VALUES (@IpGroupId, @IpAddress, datetime('now'));
                     """,
-                    new { IpGroupId = group.AzureId, IpAddress = ip.Address, Label = ip.Label, Notes = ip.Notes });
+                    new { IpGroupId = group.AzureId, IpAddress = ip.Address });
+
+                if (ip.Label is not null)
+                    conn.Execute("""
+                        INSERT OR IGNORE INTO IpAddressLabels (IpAddress, Label, Notes, CreatedAt, UpdatedAt)
+                        VALUES (@IpAddress, @Label, @Notes, datetime('now'), datetime('now'));
+                        """,
+                        new { IpAddress = ip.Address, Label = ip.Label, Notes = ip.Notes });
             }
         }
     }
