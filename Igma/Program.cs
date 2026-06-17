@@ -36,6 +36,8 @@ if (useDevAuth)
 else
 {
     builder.Services.AddMicrosoftIdentityWebAppAuthentication(builder.Configuration, "AzureAd");
+    builder.Services.Configure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme,
+        options => options.AccessDeniedPath = "/accessdenied");
     builder.Services.AddRazorPages();
     builder.Services.AddControllersWithViews()
         .AddMicrosoftIdentityUI();
