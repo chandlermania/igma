@@ -64,7 +64,14 @@ builder.Services.AddRouting(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = options.DefaultPolicy;
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .RequireRole("Reader", "Writer")
+        .Build();
+
+    options.AddPolicy("Writer", policy => policy
+        .RequireAuthenticatedUser()
+        .RequireRole("Writer"));
 });
 
 var dbPath = builder.Environment.IsDevelopment()

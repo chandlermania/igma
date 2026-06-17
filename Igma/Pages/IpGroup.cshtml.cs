@@ -42,6 +42,9 @@ public class IpGroupModel(
 
     public IActionResult OnPostSaveDescriptionJson(int id, string? description)
     {
+        if (!User.IsInRole("Writer"))
+            return new JsonResult(new { success = false, error = "You do not have permission to edit." }) { StatusCode = 403 };
+
         if (ipGroupRepo.GetAzureId(id) is null) return NotFound();
 
         description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
@@ -66,6 +69,9 @@ public class IpGroupModel(
 
     public IActionResult OnPostSaveLabelJson(int id, string ipAddress, string? label, string? notes)
     {
+        if (!User.IsInRole("Writer"))
+            return new JsonResult(new { success = false, error = "You do not have permission to edit." }) { StatusCode = 403 };
+
         var ipGroupId = ipGroupRepo.GetAzureId(id);
         if (ipGroupId is null) return NotFound();
 

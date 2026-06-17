@@ -33,13 +33,16 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-auto">
-            <button class="btn btn-sm btn-outline-secondary"
-                    data-coreui-toggle="modal"
-                    data-coreui-target="#descriptionModal"
-                    title="Edit description">
-                <svg class="icon icon-sm me-1"><use href="/lib/coreui-icons/sprites/free.svg#cil-pencil"></use></svg>
-                @(string.IsNullOrWhiteSpace(Model.GroupDescription) ? "Add description" : "Edit description")
-            </button>
+            @if (User.IsInRole("Writer"))
+            {
+                <button class="btn btn-sm btn-outline-secondary"
+                        data-coreui-toggle="modal"
+                        data-coreui-target="#descriptionModal"
+                        title="Edit description">
+                    <svg class="icon icon-sm me-1"><use href="/lib/coreui-icons/sprites/free.svg#cil-pencil"></use></svg>
+                    @(string.IsNullOrWhiteSpace(Model.GroupDescription) ? "Add description" : "Edit description")
+                </button>
+            }
             @if (Model.UnlabeledCount > 0)
             {
                 <span class="badge text-bg-warning fs-6">@Model.UnlabeledCount unlabeled</span>
@@ -95,15 +98,18 @@
                         }
                     </td>
                     <td class="text-end align-middle">
-                        <button class="btn btn-sm btn-primary"
-                                data-coreui-toggle="modal"
-                                data-coreui-target="#editModal"
-                                data-ip="@entry.IpAddress"
-                                data-label="@entry.Label"
-                                data-notes="@entry.Notes">
-                            <svg class="icon icon-sm me-1"><use href="/lib/coreui-icons/sprites/free.svg#cil-pencil"></use></svg>
-                            Edit
-                        </button>
+                        @if (User.IsInRole("Writer"))
+                        {
+                            <button class="btn btn-sm btn-primary"
+                                    data-coreui-toggle="modal"
+                                    data-coreui-target="#editModal"
+                                    data-ip="@entry.IpAddress"
+                                    data-label="@entry.Label"
+                                    data-notes="@entry.Notes">
+                                <svg class="icon icon-sm me-1"><use href="/lib/coreui-icons/sprites/free.svg#cil-pencil"></use></svg>
+                                Edit
+                            </button>
+                        }
                     </td>
                 </tr>
             }
@@ -167,6 +173,8 @@
     </div>
 </div>
 
+@if (User.IsInRole("Writer"))
+{
 <!-- Edit Description Modal -->
 <div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -240,8 +248,11 @@
         </form>
     </div>
 </div>
+}
 
 @section Scripts {
+    @if (User.IsInRole("Writer"))
+    {
     <script>
         // Description modal
         const descriptionInput = document.getElementById('descriptionInput');
@@ -327,4 +338,5 @@
             }
         });
     </script>
+    }
 }
