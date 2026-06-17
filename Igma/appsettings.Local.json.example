@@ -1,7 +1,7 @@
 {
   "SeedDatabase": true,
   "Azure": {
-    "SubscriptionIds": []
+    "ExcludeSubscriptionIds": []
   },
   "AzureAd": {
     "TenantId": "",
