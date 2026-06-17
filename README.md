@@ -29,6 +29,7 @@ Set the following values in App Service configuration (or `appsettings.json` loc
 | `AzureAd:ClientId` | App registration client ID |
 | `Azure:ExcludeSubscriptionIds` | *(Optional)* JSON array of subscription IDs to exclude from discovery |
 | `App:ShowDetailedErrors` | *(Optional)* Show raw exception messages in the UI instead of generic error text. Recommended as a slot-specific setting on a non-production slot only. |
+| `App:DevRole` | *(Dev only)* Role to assign to the auto-signed-in `dev@localhost` user when `AzureAd:ClientId` is not set. Accepts `Writer` (default) or `Reader`. |
 
 By default, the app discovers all subscriptions accessible to the Managed Identity — no subscription config is required. New subscriptions become visible automatically as access is granted.
 
@@ -39,8 +40,23 @@ In App Service, use double-underscore as the hierarchy separator in application 
 ### App registration (Entra ID)
 
 1. Register an application in Entra ID
-2. Add a redirect URI to the App Registreation: `https://<your-app>.azurewebsites.net/signin-oidc`
+2. Add a redirect URI to the App Registration: `https://<your-app>.azurewebsites.net/signin-oidc`
 3. Set `AzureAd:TenantId` and `AzureAd:ClientId` in App Service configuration
+
+#### App Roles
+
+IGMA uses two Entra ID App Roles to control access. Users with neither role are denied entry.
+
+| Role value | Access |
+|------------|--------|
+| `Writer` | View all IP groups and edit labels and descriptions |
+| `Reader` | View all IP groups; no editing |
+
+To configure roles:
+
+1. In the App Registration, go to **App roles** and create both roles. Set **Allowed member types** to `Users/Groups` and the **Value** field to `Writer` or `Reader` exactly (values are case-sensitive).
+2. In the corresponding **Enterprise Application**, go to **Properties** and set **Assignment required** to **Yes**. This ensures users without a role assignment are rejected at sign-in rather than arriving with no role.
+3. Under **Users and groups**, assign each user or group to the appropriate role.
 
 ### Managed Identity (Azure SDK access)
 
@@ -119,5 +135,5 @@ Logs are then available in two places:
 
 - `appsettings.Local.json` is gitignored and never deployed — it is safe to put real subscription IDs and tenant IDs here
 - `SeedDatabase: true` populates the database with realistic fake IP Groups and IPs on first run; it is a no-op if the database already contains data. Delete `Igma/igma.db` and restart to reseed
-- When `AzureAd:ClientId` is not set, authentication is bypassed and you are signed in automatically as `dev@localhost`
+- When `AzureAd:ClientId` is not set, authentication is bypassed and you are signed in automatically as `dev@localhost` with the `Writer` role by default. Set `App:DevRole` to `Reader` in `appsettings.Local.json` to develop against the read-only experience.
 - When developing against real Azure, `DefaultAzureCredential` picks up your `az login` token automatically

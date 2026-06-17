@@ -6,5 +6,8 @@
   "AzureAd": {
     "TenantId": "",
     "ClientId": ""
+  },
+  "App": {
+    "DevRole": "Writer"
   }
 }
