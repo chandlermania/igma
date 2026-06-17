@@ -40,20 +40,6 @@ else
     builder.Services.AddControllersWithViews()
         .AddMicrosoftIdentityUI();
 
-    builder.Services.Configure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
-    {
-        options.AccessDeniedPath = "/access-denied";
-        options.Events.OnRemoteFailure = context =>
-        {
-            context.Response.Redirect("/access-denied");
-            context.HandleResponse();
-            return Task.CompletedTask;
-        };
-    });
-    builder.Services.Configure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-    {
-        options.AccessDeniedPath = "/access-denied";
-    });
 }
 
 builder.Services.AddRouting(options =>

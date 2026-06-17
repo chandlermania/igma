@@ -13,7 +13,9 @@ public class DevAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var devRole = config.GetValue<string>("App:DevRole") ?? "Writer";
+        var devRole = config.GetValue<string>("App:DevRole");
+        if (string.IsNullOrWhiteSpace(devRole)) devRole = "Writer";
+
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, "dev@localhost"),
